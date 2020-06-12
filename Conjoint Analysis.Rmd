@@ -1,0 +1,141 @@
+---
+title: "OCREVUS Conjoint"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(conjoint)
+library(readxl)
+require(fpc)
+
+data <- read_excel("CONJOINT DATA FLAGGED - OCREVUS Quantitative Pricing Research 20200415 TR (version 1).xlsx")
+
+#tea <- data(tea)
+
+#importing datasets (except combined 3rd line)
+
+path <- read_excel("CONJOINT DATA FLAGGED - OCREVUS Quantitative Pricing Research 20200512 CS.xlsx")
+sheetnames <- excel_sheets("CONJOINT DATA FLAGGED - OCREVUS Quantitative Pricing Research 20200512 CS.xlsx")
+mylist <- lapply(excel_sheets("CONJOINT DATA FLAGGED - OCREVUS Quantitative Pricing Research 20200512 CS.xlsx"), read_excel, path = "CONJOINT DATA FLAGGED - OCREVUS Quantitative Pricing Research 20200512 CS.xlsx")
+
+#naming dataframes
+names(mylist) <- sheetnames
+
+#bringing sheets out
+list2env(mylist ,.GlobalEnv)
+```
+
+```{r}
+#creating combined 3rd line dataset
+library(data.table)
+
+#transposing combination data to create Y data
+data_interim <- transpose(for_transpose)
+data_interim
+
+#creating Y data for Conjoint
+collapsed_data <- data.frame(a=unlist(data_interim, use.names = FALSE))
+collapsed_data
+```
+
+```{r}
+#Calculating Utilities and conjoint model
+#caModel(y=comb_mapped[1,], x=combs)
+
+#caUtilities(y=comb_mapped, x=combs, z=levels)
+
+#Conjoint(y=collapsed_data, x=combs, z=levels)
+```
+
+```{r}
+#Segmentation of repondents
+#K-means clustering with 3 clusters
+#caSegmentation(y=collapsed_data, x=combs, c=3)
+```
+
+```{r}
+#Too much missing data therefore, lets see how the models run after removing the N/A's
+
+#comb_mapped2 <- comb_mapped[complete.cases(comb_mapped),]
+#collapsed_data2 <- collapsed_data[complete.cases(collapsed_data),]
+
+#option did not work
+```
+
+```{r}
+#Instead lets impute the N/A values but running a regression and re-reun the conjoints subsequently
+
+#Start with Graphical Analysis
+#Scatter plot to under stand the relationship between predictors and outcome
+scatter.smooth(x=impute_data$Price, y=impute_data$Outcome, main="Outcome ~ Price")
+scatter.smooth(x=impute_data$Insurance, y=impute_data$Outcome, main="Outcome ~ Insurance")
+scatter.smooth(x=impute_data$Media, y=impute_data$Outcome, main="Outcome ~ Media")
+
+#Box plot to observe outliers
+boxplot(impute_data$Price, main="Price", sub=paste("Outlier rows: ", boxplot.stats(impute_data$Price)$out))
+boxplot(impute_data$Insurance, main="Insurance", sub=paste("Outlier rows: ", boxplot.stats(impute_data$Insurance)$out))
+boxplot(impute_data$Media, main="Media", sub=paste("Outlier rows: ", boxplot.stats(impute_data$Media)$out))
+boxplot(impute_data$Outcome, main="Outcome", sub=paste("Outlier rows: ", boxplot.stats(impute_data$Outcome)$out))
+
+#calculating correlations
+cor(impute_data$Price, impute_data$Outcome)
+cor(impute_data$Insurance, impute_data$Outcome)
+cor(impute_data$Media, impute_data$Outcome)
+#Seems like low correlations therefore these predictors may not be the best to use in the model, however, given sample size lets go forward
+
+#linear model
+linearMod <- lm(Outcome ~ factor(Price) + factor(Insurance) + factor(Media), data=impute_data)
+print(linearMod)
+summary(linearMod)
+
+#Given statistically significant predictors in the linear regression, lets impute the 3rd line data for the N/A cells in Excel, add in the real-world data, then run the conjoint models above!
+```
+
+```{r}
+#transposing the new combination data to create Y data
+data_interim2 <- transpose(for_transpose2)
+data_interim2
+
+#creating Y data for Conjoint
+collapsed_data2 <- data.frame(a=unlist(data_interim2, use.names = FALSE))
+collapsed_data2
+```
+
+```{r}
+#Converting all matricies to data frames
+levels <- data.frame(levels)
+comb_final <- data.frame(comb_final)
+combs <- data.frame(combs)
+
+#Calculating Utilities and conjoint model once again
+caModel(y=comb_final[1,], x=combs)
+
+caUtilities(y=comb_final, x=combs, z=levels)
+
+Conjoint(y=collapsed_data2, x=combs, z=levels)
+```
+
+```{r}
+#Segmentation of repondents
+#K-means clustering with 3 clusters
+caSegmentation(y=collapsed_data2, x=combs, c=3)
+```
+
+
+```{r}
+scatter.smooth(x=impute_data$Insurance, y=impute_data$Outcome, main="Outcome ~ Insurance")
+scatter.smooth(x=impute_data$Media, y=impute_data$Outcome, main="Outcome ~ Media")
+
+Mod2 <- lm(Outcome ~ factor(Price) + factor(Insurance) + factor(Media), data=impute_data)
+print(Mod2)
+summary(Mod2)
+summary(linearMod)
+
+confint(linearMod)
+confint(Mod2)
+```
+
