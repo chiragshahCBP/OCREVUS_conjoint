@@ -130,12 +130,21 @@ caSegmentation(y=collapsed_data2, x=combs, c=3)
 scatter.smooth(x=impute_data$Insurance, y=impute_data$Outcome, main="Outcome ~ Insurance")
 scatter.smooth(x=impute_data$Media, y=impute_data$Outcome, main="Outcome ~ Media")
 
-Mod2 <- lm(Outcome ~ factor(Price) + factor(Insurance) + factor(Media), data=impute_data)
+Mod2 <- lm(Outcome^2 ~ factor(Price) + factor(Insurance) + factor(Media), data=impute_data)
 print(Mod2)
 summary(Mod2)
 summary(linearMod)
 
 confint(linearMod)
 confint(Mod2)
+```
+
+```{r}
+#Poisson Regression
+#Requires count data
+
+poisson_mod <- glm(formula = Outcome ~ factor(Price) + factor(Insurance) + factor(Media), family = "poisson", data = impute_data)
+summary(poisson_mod)
+confint(poisson_mod)
 ```
 
